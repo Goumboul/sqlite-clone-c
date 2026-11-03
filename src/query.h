@@ -2,6 +2,8 @@
 #define QUERY_H
 
 #include "repl.h"
+#include "row.h"
+#include "table.h"
 
 typedef enum {
     DOT_COMMAND_OK,
@@ -10,8 +12,14 @@ typedef enum {
 
 typedef enum {
     COMPILE_OK,
-    COMPILE_UNKNOWN_QUERY
+    COMPILE_UNKNOWN_QUERY,
+    COMPILE_SYNTAX_ERROR
 } CompileStatus;
+
+typedef enum {
+    EXECUTE_SUCCESS,
+    EXECUTE_TABLE_FULL
+} ExecuteStatus;
 
 typedef enum {
     QUERY_INSERT,
@@ -20,10 +28,11 @@ typedef enum {
 
 typedef struct {
     QueryKind kind;
+    Row row;
 } Query;
 
-DotCommandStatus handle_dot_command(LineBuffer *line);
+DotCommandStatus handle_dot_command(LineBuffer *line, Table *table);
 CompileStatus compile_query(LineBuffer *line, Query *query);
-void execute_query(Query *query);
+ExecuteStatus execute_query(Query *query, Table *table);
 
 #endif /* QUERY_H */

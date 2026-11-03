@@ -3,29 +3,43 @@
 #include <stdlib.h>
 #include "query.h"
 #include "repl.h"
+#include "table.h"
 
 int main(void)
 {
     LineBuffer *line = line_buffer_create();
+    Table *table = table_create();
 
     while (true) {
         show_prompt();
         read_line(line);
 
         if (line->buffer[0] == '.') {
-            if (handle_dot_command(line) == DOT_COMMAND_UNKNOWN) {
+            if (handle_dot_command(line, table) == DOT_COMMAND_UNKNOWN) {
                 printf("Command not found: '%s'.\n", line->buffer);
             }
             continue;
         }
 
         Query query;
-        if (compile_query(line, &query) == COMPILE_UNKNOWN_QUERY) {
+        switch (compile_query(line, &query)) {
+        case COMPILE_OK:
+            break;
+        case COMPILE_UNKNOWN_QUERY:
             printf("Unrecognized keyword at start of '%s'.\n", line->buffer);
+            continue;
+        case COMPILE_SYNTAX_ERROR:
+            printf("Syntax error. Could not parse statement.\n");
             continue;
         }
 
-        execute_query(&query);
-        printf("Executed.\n");
+        switch (execute_query(&query, table)) {
+        case EXECUTE_SUCCESS:
+            printf("Executed.\n");
+            break;
+        case EXECUTE_TABLE_FULL:
+            printf("Error: Table full.\n");
+            break;
+        }
     }
 }
