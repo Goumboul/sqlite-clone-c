@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "line_buffer.h"
+#include "repl.h"
 
 LineBuffer *line_buffer_create(void)
 {
@@ -39,5 +39,6 @@ void read_line(LineBuffer *line)
         exit(EXIT_FAILURE);
     }
 
+    /* Remove the trailing newline so the buffer can be compared directly. */
     line->buffer[line->input_length - 1] = '\0';
 }

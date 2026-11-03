@@ -1,5 +1,5 @@
-#ifndef LINE_BUFFER_H
-#define LINE_BUFFER_H
+#ifndef REPL_H
+#define REPL_H
 
 #include <stddef.h>
 #include <sys/types.h>
@@ -15,4 +15,4 @@ void line_buffer_free(LineBuffer *line);
 void show_prompt(void);
 void read_line(LineBuffer *line);
 
-#endif /* LINE_BUFFER_H */
+#endif /* REPL_H */
