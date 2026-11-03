@@ -32,13 +32,19 @@ void show_prompt(void)
 
 void read_line(LineBuffer *line)
 {
-    line->input_length = getline(&line->buffer, &line->buffer_length, stdin);
+    ssize_t bytes_read = getline(&line->buffer, &line->buffer_length, stdin);
 
-    if (line->input_length <= 0) {
+    if (bytes_read <= 0) {
         printf("Error reading input\n");
         exit(EXIT_FAILURE);
     }
 
-    /* Remove the trailing newline so the buffer can be compared directly. */
-    line->buffer[line->input_length - 1] = '\0';
+    if (line->buffer[bytes_read - 1] == '\n') {
+        /* Ignore trailing newline */
+        line->input_length = bytes_read - 1;
+        line->buffer[bytes_read - 1] = '\0';
+    } else {
+        /* Last line without a newline: keep every character */
+        line->input_length = bytes_read;
+    }
 }
