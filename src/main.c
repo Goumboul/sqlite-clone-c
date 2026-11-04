@@ -31,6 +31,9 @@ int main(void)
         case COMPILE_SYNTAX_ERROR:
             printf("Syntax error. Could not parse statement.\n");
             continue;
+        case COMPILE_STRING_TOO_LONG:
+            printf("String is too long.\n");
+            continue;
         }
 
         switch (execute_query(&query, table)) {

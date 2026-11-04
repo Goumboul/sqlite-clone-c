@@ -13,7 +13,8 @@ typedef enum {
 typedef enum {
     COMPILE_OK,
     COMPILE_UNKNOWN_QUERY,
-    COMPILE_SYNTAX_ERROR
+    COMPILE_SYNTAX_ERROR,
+    COMPILE_STRING_TOO_LONG
 } CompileStatus;
 
 typedef enum {

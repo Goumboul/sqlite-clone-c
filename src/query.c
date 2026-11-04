@@ -39,18 +39,36 @@ DotCommandStatus handle_dot_command(LineBuffer *line, Table *table)
     return DOT_COMMAND_UNKNOWN;
 }
 
+static CompileStatus compile_insert(LineBuffer *line, Query *query)
+{
+    strtok(line->buffer, " ");
+    char *id_string = strtok(NULL, " ");
+    char *username = strtok(NULL, " ");
+    char *email = strtok(NULL, " ");
+
+    if (id_string == NULL || username == NULL || email == NULL) {
+        return COMPILE_SYNTAX_ERROR;
+    }
+    if (sscanf(id_string, "%" SCNu32, &query->row.id) != 1) {
+        return COMPILE_SYNTAX_ERROR;
+    }
+    if (strlen(username) > COLUMN_USERNAME_SIZE) {
+        return COMPILE_STRING_TOO_LONG;
+    }
+    if (strlen(email) > COLUMN_EMAIL_SIZE) {
+        return COMPILE_STRING_TOO_LONG;
+    }
+
+    strcpy(query->row.username, username);
+    strcpy(query->row.email, email);
+    query->kind = QUERY_INSERT;
+    return COMPILE_OK;
+}
+
 CompileStatus compile_query(LineBuffer *line, Query *query)
 {
     if (strncmp(line->buffer, "insert", 6) == 0) {
-        query->kind = QUERY_INSERT;
-
-        int args_assigned = sscanf(line->buffer, "insert %" SCNu32 " %32s %255s",
-                                   &query->row.id, query->row.username,
-                                   query->row.email);
-        if (args_assigned < 3) {
-            return COMPILE_SYNTAX_ERROR;
-        }
-        return COMPILE_OK;
+        return compile_insert(line, query);
     }
     if (strcmp(line->buffer, "select") == 0) {
         query->kind = QUERY_SELECT;
