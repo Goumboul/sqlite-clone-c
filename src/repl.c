@@ -30,13 +30,12 @@ void show_prompt(void)
     fflush(stdout);
 }
 
-void read_line(LineBuffer *line)
+bool read_line(LineBuffer *line)
 {
     ssize_t bytes_read = getline(&line->buffer, &line->buffer_length, stdin);
 
     if (bytes_read <= 0) {
-        printf("Error reading input\n");
-        exit(EXIT_FAILURE);
+        return false;
     }
 
     if (line->buffer[bytes_read - 1] == '\n') {
@@ -47,4 +46,6 @@ void read_line(LineBuffer *line)
         /* Last line without a newline: keep every character */
         line->input_length = bytes_read;
     }
+
+    return true;
 }

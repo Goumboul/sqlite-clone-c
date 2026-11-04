@@ -34,7 +34,7 @@ static ExecuteStatus execute_select(Table *table)
 DotCommandStatus handle_dot_command(LineBuffer *line, Table *table)
 {
     if (strcmp(line->buffer, ".exit") == 0) {
-        table_free(table);
+        table_close(table);
         line_buffer_free(line);
         exit(EXIT_SUCCESS);
     }

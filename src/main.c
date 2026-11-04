@@ -5,14 +5,24 @@
 #include "repl.h"
 #include "table.h"
 
-int main(void)
+int main(int argc, char *argv[])
 {
+    if (argc < 2) {
+        printf("Must supply a database filename.\n");
+        exit(EXIT_FAILURE);
+    }
+
     LineBuffer *line = line_buffer_create();
-    Table *table = table_create();
+    Table *table = table_open(argv[1]);
 
     while (true) {
         show_prompt();
-        read_line(line);
+        if (!read_line(line)) {
+            printf("Error reading input\n");
+            table_close(table);
+            line_buffer_free(line);
+            exit(EXIT_FAILURE);
+        }
 
         if (line->buffer[0] == '.') {
             if (handle_dot_command(line, table) == DOT_COMMAND_UNKNOWN) {

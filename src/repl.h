@@ -1,6 +1,7 @@
 #ifndef REPL_H
 #define REPL_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <sys/types.h>
 
@@ -13,6 +14,6 @@ typedef struct {
 LineBuffer *line_buffer_create(void);
 void line_buffer_free(LineBuffer *line);
 void show_prompt(void);
-void read_line(LineBuffer *line);
+bool read_line(LineBuffer *line);
 
 #endif /* REPL_H */

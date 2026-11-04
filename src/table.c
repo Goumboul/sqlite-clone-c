@@ -3,27 +3,41 @@
 
 #include "table.h"
 
-Table *table_create(void)
+Table *table_open(const char *filename)
 {
+    Pager *pager = pager_open(filename);
     Table *table = malloc(sizeof(Table));
 
     if (table == NULL) {
         perror("malloc");
         exit(EXIT_FAILURE);
     }
-    table->num_rows = 0;
-    for (uint32_t i = 0; i < TABLE_MAX_PAGES; i++) {
-        table->pages[i] = NULL;
-    }
+    table->pager = pager;
+    table->num_rows = pager->file_length / ROW_SIZE;
 
     return table;
 }
 
-void table_free(Table *table)
+void table_close(Table *table)
 {
-    for (uint32_t i = 0; i < TABLE_MAX_PAGES; i++) {
-        free(table->pages[i]);
+    Pager *pager = table->pager;
+    uint32_t num_full_pages = table->num_rows / ROWS_PER_PAGE;
+
+    for (uint32_t i = 0; i < num_full_pages; i++) {
+        if (pager->pages[i] != NULL) {
+            pager_flush(pager, i, PAGE_DATA_SIZE);
+        }
     }
+
+    uint32_t num_additional_rows = table->num_rows % ROWS_PER_PAGE;
+    if (num_additional_rows > 0) {
+        uint32_t page_num = num_full_pages;
+        if (pager->pages[page_num] != NULL) {
+            pager_flush(pager, page_num, num_additional_rows * ROW_SIZE);
+        }
+    }
+
+    pager_close(pager);
     free(table);
 }
 
@@ -35,14 +49,7 @@ void *row_slot(Table *table, uint32_t row_num)
         return NULL;
     }
 
-    if (table->pages[page_num] == NULL) {
-        table->pages[page_num] = malloc(PAGE_SIZE);
-        if (table->pages[page_num] == NULL) {
-            perror("malloc");
-            exit(EXIT_FAILURE);
-        }
-    }
-
+    void *page = pager_get_page(table->pager, page_num);
     uint32_t byte_offset = (row_num % ROWS_PER_PAGE) * ROW_SIZE;
-    return (char *)table->pages[page_num] + byte_offset;
+    return (char *)page + byte_offset;
 }

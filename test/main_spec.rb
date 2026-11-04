@@ -1,7 +1,16 @@
+require 'tmpdir'
+
 describe 'database' do
-  def run_script(commands)
+  around do |example|
+    Dir.mktmpdir do |dir|
+      @db_file = File.join(dir, 'test.db')
+      example.run
+    end
+  end
+
+  def run_script(commands, db_file = @db_file)
     raw_output = nil
-    IO.popen('./db', 'r+') do |pipe|
+    IO.popen(['./db', db_file], 'r+') do |pipe|
       commands.each do |command|
         pipe.puts command
       end
@@ -73,6 +82,74 @@ describe 'database' do
       'db > String is too long.',
       'db > Executed.',
       'db > ',
+    ])
+  end
+
+  it 'keeps data after closing the connection' do
+    result1 = run_script([
+      'insert 1 user1 person1@example.com',
+      '.exit',
+    ])
+    expect(result1).to match_array([
+      'db > Executed.',
+      'db > ',
+    ])
+
+    result2 = run_script([
+      'select',
+      '.exit',
+    ])
+    expect(result2).to match_array([
+      'db > (1, user1, person1@example.com)',
+      'Executed.',
+      'db > ',
+    ])
+  end
+
+  it 'keeps data when input ends without .exit' do
+    result1 = run_script([
+      'insert 1 user1 person1@example.com',
+    ])
+    expect(result1).to match_array([
+      'db > Executed.',
+      'db > Error reading input',
+    ])
+
+    result2 = run_script([
+      'select',
+      '.exit',
+    ])
+    expect(result2).to match_array([
+      'db > (1, user1, person1@example.com)',
+      'Executed.',
+      'db > ',
+    ])
+  end
+
+  it 'keeps data across several pages after closing the connection' do
+    row_count = 30
+    inserts = (1..row_count).map do |i|
+      "insert #{i} user#{i} person#{i}@example.com"
+    end
+    result1 = run_script(inserts + ['.exit'])
+    expect(result1.last).to eq('db > ')
+    expect(result1.count('db > Executed.')).to eq(row_count)
+
+    result2 = run_script(['select', '.exit'])
+    expected_rows = (1..row_count).map do |i|
+      "(#{i}, user#{i}, person#{i}@example.com)"
+    end
+    expected_rows[0] = "db > #{expected_rows[0]}"
+    expect(result2).to eq(expected_rows + ['Executed.', 'db > '])
+  end
+
+  it 'prints an error message if no database filename is given' do
+    raw_output = IO.popen(['./db'], 'r+') do |pipe|
+      pipe.close_write
+      pipe.gets(nil)
+    end
+    expect(raw_output.split("\n")).to eq([
+      'Must supply a database filename.',
     ])
   end
 
