@@ -75,4 +75,46 @@ describe 'database' do
       'db > ',
     ])
   end
+
+  it 'prints an error message if id is negative' do
+    script = [
+      'insert -1 cstack foo@bar.com',
+      'select',
+      '.exit',
+    ]
+    result = run_script(script)
+    expect(result).to match_array([
+      'db > ID must be positive.',
+      'db > Executed.',
+      'db > ',
+    ])
+  end
+
+  it 'rejects an id with trailing non-numeric characters' do
+    script = [
+      'insert 12abc cstack foo@bar.com',
+      'select',
+      '.exit',
+    ]
+    result = run_script(script)
+    expect(result).to match_array([
+      'db > Syntax error. Could not parse statement.',
+      'db > Executed.',
+      'db > ',
+    ])
+  end
+
+  it 'prints an error message if id is larger than UINT32_MAX' do
+    script = [
+      'insert 4294967296 cstack foo@bar.com',
+      'select',
+      '.exit',
+    ]
+    result = run_script(script)
+    expect(result).to match_array([
+      'db > ID is too large.',
+      'db > Executed.',
+      'db > ',
+    ])
+  end
 end

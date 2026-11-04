@@ -34,6 +34,12 @@ int main(void)
         case COMPILE_STRING_TOO_LONG:
             printf("String is too long.\n");
             continue;
+        case COMPILE_NEGATIVE_ID:
+            printf("ID must be positive.\n");
+            continue;
+        case COMPILE_ID_TOO_LARGE:
+            printf("ID is too large.\n");
+            continue;
         }
 
         switch (execute_query(&query, table)) {

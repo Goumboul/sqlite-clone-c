@@ -1,4 +1,6 @@
+#include <errno.h>
 #include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -49,9 +51,20 @@ static CompileStatus compile_insert(LineBuffer *line, Query *query)
     if (id_string == NULL || username == NULL || email == NULL) {
         return COMPILE_SYNTAX_ERROR;
     }
-    if (sscanf(id_string, "%" SCNu32, &query->row.id) != 1) {
+    char *endptr = NULL;
+    errno = 0;
+    long id = strtol(id_string, &endptr, 10);
+    if (endptr == id_string || *endptr != '\0') {
         return COMPILE_SYNTAX_ERROR;
     }
+    if (id < 0) {
+        return COMPILE_NEGATIVE_ID;
+    }
+    if (errno == ERANGE || id > UINT32_MAX) {
+        return COMPILE_ID_TOO_LARGE;
+    }
+    query->row.id = (uint32_t)id;
+
     if (strlen(username) > COLUMN_USERNAME_SIZE) {
         return COMPILE_STRING_TOO_LONG;
     }
