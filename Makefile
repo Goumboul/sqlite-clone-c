@@ -24,4 +24,7 @@ fclean: clean
 
 re: fclean all
 
-.PHONY: all clean fclean re
+test: $(NAME)
+	bundle exec rspec test/
+
+.PHONY: all clean fclean re test
