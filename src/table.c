@@ -62,15 +62,20 @@ Cursor *table_start(Table *table)
     return cursor;
 }
 
-Cursor *table_end(Table *table)
+/*
+ * Return the position of the key, or the position where it should be
+ * inserted if it is not present.
+ */
+Cursor *table_find(Table *table, uint32_t key)
 {
-    Cursor *cursor = cursor_create(table);
-    void *root_node = pager_get_page(table->pager, table->root_page_num);
+    uint32_t root_page_num = table->root_page_num;
+    void *root_node = pager_get_page(table->pager, root_page_num);
 
-    cursor->page_num = table->root_page_num;
-    cursor->cell_num = *leaf_node_num_cells(root_node);
-    cursor->end_of_table = true;
-    return cursor;
+    if (get_node_type(root_node) == NODE_LEAF) {
+        return leaf_node_find(table, root_page_num, key);
+    }
+    printf("Need to implement searching an internal node\n");
+    exit(EXIT_FAILURE);
 }
 
 void *cursor_value(Cursor *cursor)

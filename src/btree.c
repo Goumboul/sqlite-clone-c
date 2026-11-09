@@ -26,9 +26,61 @@ void *leaf_node_value(void *node, uint32_t cell_num)
     return (char *)leaf_node_cell(node, cell_num) + LEAF_NODE_KEY_SIZE;
 }
 
+NodeType get_node_type(void *node)
+{
+    uint8_t value = *((uint8_t *)((char *)node + NODE_TYPE_OFFSET));
+    return (NodeType)value;
+}
+
+void set_node_type(void *node, NodeType type)
+{
+    uint8_t value = type;
+    *((uint8_t *)((char *)node + NODE_TYPE_OFFSET)) = value;
+}
+
 void initialize_leaf_node(void *node)
 {
+    set_node_type(node, NODE_LEAF);
     *leaf_node_num_cells(node) = 0;
+}
+
+/*
+ * Return the position of the key in the leaf. If the key is not present,
+ * return the position where it should be inserted.
+ */
+Cursor *leaf_node_find(Table *table, uint32_t page_num, uint32_t key)
+{
+    void *node = pager_get_page(table->pager, page_num);
+    uint32_t num_cells = *leaf_node_num_cells(node);
+
+    Cursor *cursor = malloc(sizeof(Cursor));
+    if (cursor == NULL) {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+    cursor->table = table;
+    cursor->page_num = page_num;
+
+    /* Binary search over the cells, which are kept sorted by key. */
+    uint32_t min_index = 0;
+    uint32_t one_past_max_index = num_cells;
+    while (one_past_max_index != min_index) {
+        uint32_t index = (min_index + one_past_max_index) / 2;
+        uint32_t key_at_index = *leaf_node_key(node, index);
+        if (key == key_at_index) {
+            min_index = index;
+            break;
+        }
+        if (key < key_at_index) {
+            one_past_max_index = index;
+        } else {
+            min_index = index + 1;
+        }
+    }
+
+    cursor->cell_num = min_index;
+    cursor->end_of_table = (min_index >= num_cells);
+    return cursor;
 }
 
 void leaf_node_insert(Cursor *cursor, uint32_t key, Row *value)

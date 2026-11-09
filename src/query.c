@@ -11,13 +11,21 @@
 static ExecuteStatus execute_insert(Query *query, Table *table)
 {
     void *node = pager_get_page(table->pager, table->root_page_num);
-    if (*leaf_node_num_cells(node) >= LEAF_NODE_MAX_CELLS) {
+    uint32_t num_cells = *leaf_node_num_cells(node);
+    if (num_cells >= LEAF_NODE_MAX_CELLS) {
         return EXECUTE_TABLE_FULL;
     }
 
-    Cursor *cursor = table_end(table);
+    uint32_t key_to_insert = query->row.id;
+    Cursor *cursor = table_find(table, key_to_insert);
 
-    leaf_node_insert(cursor, query->row.id, &query->row);
+    if (cursor->cell_num < num_cells
+        && *leaf_node_key(node, cursor->cell_num) == key_to_insert) {
+        free(cursor);
+        return EXECUTE_DUPLICATE_KEY;
+    }
+
+    leaf_node_insert(cursor, key_to_insert, &query->row);
 
     free(cursor);
 

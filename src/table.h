@@ -21,7 +21,7 @@ typedef struct {
 Table *table_open(const char *filename);
 void table_close(Table *table);
 Cursor *table_start(Table *table);
-Cursor *table_end(Table *table);
+Cursor *table_find(Table *table, uint32_t key);
 void *cursor_value(Cursor *cursor);
 void cursor_advance(Cursor *cursor);
 
