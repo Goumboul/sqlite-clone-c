@@ -5,18 +5,19 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "btree.h"
 #include "query.h"
 
 static ExecuteStatus execute_insert(Query *query, Table *table)
 {
-    if (table->num_rows >= TABLE_MAX_ROWS) {
+    void *node = pager_get_page(table->pager, table->root_page_num);
+    if (*leaf_node_num_cells(node) >= LEAF_NODE_MAX_CELLS) {
         return EXECUTE_TABLE_FULL;
     }
 
     Cursor *cursor = table_end(table);
 
-    serialize_row(&query->row, cursor_value(cursor));
-    table->num_rows += 1;
+    leaf_node_insert(cursor, query->row.id, &query->row);
 
     free(cursor);
 
@@ -45,6 +46,16 @@ DotCommandStatus handle_dot_command(LineBuffer *line, Table *table)
         table_close(table);
         line_buffer_free(line);
         exit(EXIT_SUCCESS);
+    }
+    if (strcmp(line->buffer, ".btree") == 0) {
+        printf("Tree:\n");
+        print_leaf_node(pager_get_page(table->pager, table->root_page_num));
+        return DOT_COMMAND_OK;
+    }
+    if (strcmp(line->buffer, ".constants") == 0) {
+        printf("Constants:\n");
+        print_constants();
+        return DOT_COMMAND_OK;
     }
     return DOT_COMMAND_UNKNOWN;
 }

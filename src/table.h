@@ -5,19 +5,17 @@
 #include <stdint.h>
 
 #include "pager.h"
-#include "row.h"
-
-#define TABLE_MAX_ROWS (ROWS_PER_PAGE * TABLE_MAX_PAGES)
 
 typedef struct {
     Pager *pager;
-    uint32_t num_rows;
+    uint32_t root_page_num;
 } Table;
 
 typedef struct {
     Table *table;
-    uint32_t row_num;
-    bool end_of_table; /* true when positioned one past the last row */
+    uint32_t page_num;
+    uint32_t cell_num;
+    bool end_of_table; /* true when positioned one past the last cell */
 } Cursor;
 
 Table *table_open(const char *filename);
