@@ -20,6 +20,7 @@ Table *table_open(const char *filename)
         /* New database file: page 0 starts as an empty leaf node. */
         void *root_node = pager_get_page(pager, 0);
         initialize_leaf_node(root_node);
+        set_node_root(root_node, true);
     }
 
     return table;

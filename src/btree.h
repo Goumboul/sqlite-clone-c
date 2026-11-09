@@ -1,6 +1,7 @@
 #ifndef BTREE_H
 #define BTREE_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "pager.h"
@@ -33,17 +34,38 @@ typedef enum { NODE_INTERNAL, NODE_LEAF } NodeType;
 #define LEAF_NODE_SPACE_FOR_CELLS (PAGE_SIZE - LEAF_NODE_HEADER_SIZE)
 #define LEAF_NODE_MAX_CELLS (LEAF_NODE_SPACE_FOR_CELLS / LEAF_NODE_CELL_SIZE)
 
+/* Cells per node after a leaf split (N+1 cells, left gets the extra one) */
+#define LEAF_NODE_RIGHT_SPLIT_COUNT ((LEAF_NODE_MAX_CELLS + 1) / 2)
+#define LEAF_NODE_LEFT_SPLIT_COUNT \
+    ((LEAF_NODE_MAX_CELLS + 1) - LEAF_NODE_RIGHT_SPLIT_COUNT)
+
+/* Internal node header layout */
+#define INTERNAL_NODE_NUM_KEYS_SIZE (sizeof(uint32_t))
+#define INTERNAL_NODE_NUM_KEYS_OFFSET (COMMON_NODE_HEADER_SIZE)
+#define INTERNAL_NODE_RIGHT_CHILD_SIZE (sizeof(uint32_t))
+#define INTERNAL_NODE_RIGHT_CHILD_OFFSET \
+    (INTERNAL_NODE_NUM_KEYS_OFFSET + INTERNAL_NODE_NUM_KEYS_SIZE)
+#define INTERNAL_NODE_HEADER_SIZE \
+    (COMMON_NODE_HEADER_SIZE + INTERNAL_NODE_NUM_KEYS_SIZE \
+     + INTERNAL_NODE_RIGHT_CHILD_SIZE)
+
+/* Internal node body layout: each cell is a child pointer and a key */
+#define INTERNAL_NODE_KEY_SIZE (sizeof(uint32_t))
+#define INTERNAL_NODE_CHILD_SIZE (sizeof(uint32_t))
+#define INTERNAL_NODE_CELL_SIZE (INTERNAL_NODE_CHILD_SIZE + INTERNAL_NODE_KEY_SIZE)
+
 uint32_t *leaf_node_num_cells(void *node);
 void *leaf_node_cell(void *node, uint32_t cell_num);
 uint32_t *leaf_node_key(void *node, uint32_t cell_num);
 void *leaf_node_value(void *node, uint32_t cell_num);
 NodeType get_node_type(void *node);
 void set_node_type(void *node, NodeType type);
+void set_node_root(void *node, bool is_root);
 void initialize_leaf_node(void *node);
 Cursor *leaf_node_find(Table *table, uint32_t page_num, uint32_t key);
 void leaf_node_insert(Cursor *cursor, uint32_t key, Row *value);
 
 void print_constants(void);
-void print_leaf_node(void *node);
+void print_tree(Pager *pager, uint32_t page_num, uint32_t indentation_level);
 
 #endif /* BTREE_H */

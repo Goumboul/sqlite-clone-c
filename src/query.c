@@ -10,15 +10,11 @@
 
 static ExecuteStatus execute_insert(Query *query, Table *table)
 {
-    void *node = pager_get_page(table->pager, table->root_page_num);
-    uint32_t num_cells = *leaf_node_num_cells(node);
-    if (num_cells >= LEAF_NODE_MAX_CELLS) {
-        return EXECUTE_TABLE_FULL;
-    }
-
     uint32_t key_to_insert = query->row.id;
     Cursor *cursor = table_find(table, key_to_insert);
 
+    void *node = pager_get_page(table->pager, cursor->page_num);
+    uint32_t num_cells = *leaf_node_num_cells(node);
     if (cursor->cell_num < num_cells
         && *leaf_node_key(node, cursor->cell_num) == key_to_insert) {
         free(cursor);
@@ -57,7 +53,7 @@ DotCommandStatus handle_dot_command(LineBuffer *line, Table *table)
     }
     if (strcmp(line->buffer, ".btree") == 0) {
         printf("Tree:\n");
-        print_leaf_node(pager_get_page(table->pager, table->root_page_num));
+        print_tree(table->pager, table->root_page_num, 0);
         return DOT_COMMAND_OK;
     }
     if (strcmp(line->buffer, ".constants") == 0) {
